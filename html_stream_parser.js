@@ -235,11 +235,11 @@ function randomSplit(text) {
 class StreamHTMLParser {
     /**
      *
-     * @param {*} onCharRead - 本文を取得するイベントハンドラ
+     * @param {*} onBodyRead - 本文を取得するイベントハンドラ
      * @param {*} onTagRead - タグを取得するイベントハンドラ
      */
-    constructor(onCharRead, onTagRead) {
-        this.onCharRead = onCharRead;
+    constructor(onBodyRead, onTagRead) {
+        this.onBodyRead = onBodyRead;
         this.onTagRead = onTagRead;
 
         // タグ・バッファー（Tag buffer）
@@ -269,7 +269,7 @@ class StreamHTMLParser {
         for (const char of characters) {
             // （事前）状態遷移
             if (char === "<") {
-                this.onCharRead(bodyBuffer.join(""));
+                this.onBodyRead(bodyBuffer.join(""));
                 bodyBuffer = [];
 
                 this.state = "T";
@@ -301,7 +301,7 @@ class StreamHTMLParser {
         // - 未完成のタグは、フラッシュしません
         switch (this.state) {
             case "B":
-                this.onCharRead(bodyBuffer.join(""));
+                this.onBodyRead(bodyBuffer.join(""));
                 break;
         }
     }
