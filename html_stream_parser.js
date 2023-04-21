@@ -8,7 +8,7 @@
  *
  * 👇 このファイルを、 Paiza の Webサイトで Java Script を貼り付けると、試行できる
  *
- * * 📖 [paiza.io](https: *paiza.io/ja/projects/new?language=javascript)
+ * * 📖 [paiza.io](https://paiza.io/ja/projects/new?language=javascript)
  *
  *
  * シナリオ
