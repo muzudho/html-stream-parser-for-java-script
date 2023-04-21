@@ -38,7 +38,9 @@
  * 読取例
  * ======
  *
- * - 以下のように、タグを固まりとして取得できる
+ * - 本文は、細切れに渡される
+ * - 開きタグ、閉じタグは、それぞれ、ひとつのかたまりで渡される
+ * - タグの属性は、連想配列で渡される
  *
  * Body     |
  *
@@ -142,22 +144,9 @@ function runExample() {
 伸びない
 `;
 
-    // フラグメンテーション
-    // =================
-    //
-    // - テストデータを、数文字ずつの　フラグメント（Fragment；断片）　に分割する
-    // - ストリームを模倣する
-    let testDataFragments = [];
-    let tempBuffer = [];
-    for (const char of testData.split("")) {
-        tempBuffer.push(char);
-        if (0.75 <= Math.random()) {
-            testDataFragments.push(tempBuffer.join(""));
-            tempBuffer = [];
-        }
-    }
-    testDataFragments.push(tempBuffer.join(""));
-    tempBuffer = [];
+    // テスト・データを数文字ずつ千切ってリストに入れる
+    // =========================================
+    const testDataFragments = randomSplit(testData);
     console.log(`
 入力データ例
 ============
@@ -231,7 +220,9 @@ ${testDataFragments}
 読取例
 ======
 
-- 以下のように、タグを固まりとして取得できる
+- 本文は、細切れに渡される
+- 開きタグ、閉じタグは、それぞれ、ひとつのかたまりで渡される
+- タグの属性は、連想配列で渡される
 
 `);
     for (const fragment of testDataFragments) {
@@ -240,7 +231,29 @@ ${testDataFragments}
 }
 
 /**
+ * ランダム分割
+ * ==========
+ *
+ * - 入力テキストを、数文字ずつに千切ったリストを作成
+ * - ストリームで文字列が少しずつ渡されるのを模倣するのに使う
+ */
+function randomSplit(text) {
+    let fragments = [];
+    let stringBuffer = [];
+    for (const char of text.split("")) {
+        stringBuffer.push(char);
+        if (0.75 <= Math.random()) {
+            fragments.push(stringBuffer.join(""));
+            stringBuffer = [];
+        }
+    }
+    fragments.push(stringBuffer.join(""));
+    return fragments;
+}
+
+/**
  * ストリーム HTML パーサー
+ * ======================
  *
  * - 別ファイルにしてインポートした方が便利
  */
