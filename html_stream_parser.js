@@ -23,77 +23,58 @@
  *
  * - 以下のように、入力文字列をランダムな長さに細切れにしてから入力される
  *
- * <,fo,nt c,olor="yellow" ,si,ze="1,8">上長</,font>：,<br,>
- * ちょっと,　これだけ入れ,てく,ださい　,これ,だけ,。<br,>,
- * 簡,単,だから
  *
- * <font co,l,or,=",b,lue" siz,e="24">デベロ,ッパー</,font>,：<br,>
- * ,<,s,tr,ong>納期</,s,tron,g>は伸び,るんですか？,
- *
- * <,f,ont colo,r="yello,w" size="1,8">,上長</font>,：,<br>
- * 伸び,ない
+ * <fo,nt color="yello,w", s,ize,="1,8">上長<,/font,>,：,<,br,>
+ * ち,ょっと　こ,れだけ入,れ,てく,だ,さい　これだけ。,<b,r>
+ * 簡単,だから
+ * ,
+ * <,font col,or="bl,u,e" ,size=,",24">デ,ベロ,ッパー</fon,t>,：<br>
+ * <,st,rong>納,期,</stron,g>は,伸び,るんですか,？
+ * ,
+ * <,font, c,olo,r="y,ello,w", size="18,">上,長,</f,ont>,：<br>
+ * ,伸びな,い
  *
  *
  *
  * 読取例
  * ======
  *
- * - 本文は、細切れに渡される
+ * - 本文は、ストリームから受け取った細切れ分ずつ渡される
  * - 開きタグ、閉じタグは、それぞれ、ひとつのかたまりで渡される
  * - タグの属性は、連想配列で渡される
+ *
  *
  * Body     |
  *
  * Tag      | font {color=yellow, size=18} | <font color="yellow" size="18">
- * Body     | 上
- * Body     | 長
+ * Body     | 上長
  * CloseTag | font | </font>
+ * Body     |
  * Body     | ：
+ * Body     |
  * Tag      | br | <br>
  * Body     |
- *
- * Body     | ち
- * Body     | ょ
- * Body     | っ
- * Body     | と
+ * ち
+ * Body     | ょっと　こ
+ * Body     | れだけ入
+ * Body     | れ
+ * Body     | てく
+ * Body     | だ
+ * Body     | さい　これだけ。
  * Body     |
- * Body     | こ
- * Body     | れ
- * Body     | だ
- * Body     | け
- * Body     | 入
- * Body     | れ
- * Body     | て
- * Body     | く
- * Body     | だ
- * Body     | さ
- * Body     | い
- * Body     |
- * Body     | こ
- * Body     | れ
- * Body     | だ
- * Body     | け
- * Body     | 。
  * Tag      | br | <br>
  * Body     |
- *
- * Body     | 簡
- * Body     | 単
- * Body     | だ
- * Body     | か
- * Body     | ら
- * Body     |
+ * 簡単
+ * Body     | だから
  *
  * Body     |
  *
  * Tag      | font {color=blue, size=24} | <font color="blue" size="24">
  * Body     | デ
- * Body     | ベ
- * Body     | ロ
- * Body     | ッ
- * Body     | パ
- * Body     | ー
+ * Body     | ベロ
+ * Body     | ッパー
  * CloseTag | font | </font>
+ * Body     |
  * Body     | ：
  * Tag      | br | <br>
  * Body     |
@@ -101,33 +82,27 @@
  * Tag      | strong | <strong>
  * Body     | 納
  * Body     | 期
+ * Body     |
  * CloseTag | strong | </strong>
  * Body     | は
- * Body     | 伸
- * Body     | び
- * Body     | る
- * Body     | ん
- * Body     | で
- * Body     | す
- * Body     | か
+ * Body     | 伸び
+ * Body     | るんですか
  * Body     | ？
- * Body     |
  *
  * Body     |
  *
  * Tag      | font {color=yellow, size=18} | <font color="yellow" size="18">
  * Body     | 上
  * Body     | 長
+ * Body     |
  * CloseTag | font | </font>
+ * Body     |
  * Body     | ：
  * Tag      | br | <br>
  * Body     |
  *
- * Body     | 伸
- * Body     | び
- * Body     | な
+ * Body     | 伸びな
  * Body     | い
- * Body     |
  */
 function runExample() {
     // テスト・データ
@@ -220,7 +195,7 @@ ${testDataFragments}
 読取例
 ======
 
-- 本文は、細切れに渡される
+- 本文は、ストリームから受け取った細切れ分ずつ渡される
 - 開きタグ、閉じタグは、それぞれ、ひとつのかたまりで渡される
 - タグの属性は、連想配列で渡される
 
@@ -285,23 +260,25 @@ class StreamHTMLParser {
     append(fragment) {
         // キャラクターズ（Characters；複数の文字）
         //
-        // - もっと分解しよう
+        // - 最小の単位に分解する
         const characters = fragment.split("");
+
+        // 本文バッファー
+        let bodyBuffer = [];
 
         for (const char of characters) {
             // （事前）状態遷移
             if (char === "<") {
+                this.onCharRead(bodyBuffer.join(""));
+                bodyBuffer = [];
+
                 this.state = "T";
             }
 
             // 状態
             switch (this.state) {
                 case "B":
-                    if (char === "<") {
-                        this.tagBuffer.push(char);
-                    } else {
-                        this.onCharRead(char);
-                    }
+                    bodyBuffer.push(char);
                     break;
 
                 case "T":
@@ -316,6 +293,16 @@ class StreamHTMLParser {
                 // タグ・バッファーをフラッシュ
                 this.flushTag();
             }
+        }
+
+        // 残り物のフラッシュ
+        //
+        // - 本文は、フラッシュします
+        // - 未完成のタグは、フラッシュしません
+        switch (this.state) {
+            case "B":
+                this.onCharRead(bodyBuffer.join(""));
+                break;
         }
     }
 
